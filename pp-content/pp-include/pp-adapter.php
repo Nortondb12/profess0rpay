@@ -5638,6 +5638,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             
                             deleteImage($global_response_brand['response'][0]['favicon']);
                         }else{
+                            if(isset($_FILES['favicon']) && $_FILES['favicon']['error'] !== UPLOAD_ERR_NO_FILE) {
+                                echo json_encode(['status' => 'false', 'title' => 'Favicon Upload Failed', 'message' => $branding_favicon['message'] ?? 'Unknown error', 'csrf_token' => $new_csrf_token]);
+                                exit();
+                            }
                             $branding_favicon = $global_response_brand['response'][0]['favicon'];
                         }
 
@@ -5647,6 +5651,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             
                             deleteImage($global_response_brand['response'][0]['logo']);
                         }else{
+                            if(isset($_FILES['primary_logo']) && $_FILES['primary_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                                echo json_encode(['status' => 'false', 'title' => 'Logo Upload Failed', 'message' => $branding_primary_logo['message'] ?? 'Unknown error', 'csrf_token' => $new_csrf_token]);
+                                exit();
+                            }
                             $branding_primary_logo = $global_response_brand['response'][0]['logo'];
                         }
 
@@ -5675,6 +5683,21 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                 }
+            }
+
+            if ($action == "clear-system-logs") {
+                if ($global_user_login == true && ($global_user_response['response'][0]['role'] == 'admin' || empty($global_user_response['response'][0]['role']))) {
+                    $pdo = connectDatabase();
+                    if ($pdo) {
+                        $pdo->exec("TRUNCATE TABLE {$db_prefix}system_logs");
+                        echo json_encode(['status' => 'true', 'title' => 'Logs Cleared', 'message' => 'All system logs have been cleared successfully.', 'csrf_token' => $new_csrf_token]);
+                    } else {
+                        echo json_encode(['status' => 'false', 'title' => 'Error', 'message' => 'Database connection failed.', 'csrf_token' => $new_csrf_token]);
+                    }
+                } else {
+                    echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action.', 'csrf_token' => $new_csrf_token]);
+                }
+                exit();
             }
 
             if ($action == "edit-device-name") {

@@ -167,6 +167,25 @@ body {
             // Customers
             $res = json_decode(getData($db_prefix.'customer', ' WHERE brand_id = "'.$global_response_brand['response'][0]['brand_id'].'"'), true);
             if($res['status'] == true) { $total_customers = count($res['response']); }
+
+            // --- Advanced Analytics Data (Last 30 Days) ---
+            $analytics_30_days = ['completed' => 0, 'pending' => 0, 'failed' => 0];
+            $payment_methods = [];
+            $start_30_utc = gmdate('Y-m-d H:i:s', strtotime('-30 days'));
+            $res_30 = json_decode(getData($db_prefix.'transaction', ' WHERE brand_id = "'.$global_response_brand['response'][0]['brand_id'].'" AND created_date >= "'.$start_30_utc.'"'), true);
+            if($res_30['status'] == true && !empty($res_30['response'])) {
+                foreach($res_30['response'] as $tx) {
+                    // Status
+                    if ($tx['status'] == 'completed') $analytics_30_days['completed']++;
+                    elseif ($tx['status'] == 'pending') $analytics_30_days['pending']++;
+                    else $analytics_30_days['failed']++;
+                    
+                    // Payment Methods
+                    $method = !empty($tx['gateway_id']) ? strtoupper($tx['gateway_id']) : 'UNKNOWN';
+                    if (!isset($payment_methods[$method])) $payment_methods[$method] = 0;
+                    $payment_methods[$method]++;
+                }
+            }
         ?>
 
         <!-- Stats Cards -->
@@ -373,22 +392,50 @@ body {
                 </div>
             </div>
 
-            <!-- Right Column: Chart -->
+            <!-- Advanced Analytics Row -->
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h3 class="card-title fw-bold m-0" style="font-size: 18px;">Revenue Overview</h3>
-                        <div>
-                            <select class="form-select form-select-sm border-0 bg-light text-secondary fw-medium" id="dateFilter-transaction-statistics" onchange="handleFilterChangeTransactionStatistics(this.value)" style="border-radius: 8px;">
-                                <option value="this_month" selected>This month</option>
-                                <option value="this_year">This year</option>
-                            </select>
+                <div class="row g-4">
+                    <!-- Revenue Trend -->
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                                <h3 class="card-title fw-bold m-0" style="font-size: 18px;">Revenue Overview</h3>
+                                <div>
+                                    <select class="form-select form-select-sm border-0 bg-light text-secondary fw-medium" id="dateFilter-transaction-statistics" onchange="handleFilterChangeTransactionStatistics(this.value)" style="border-radius: 8px;">
+                                        <option value="this_month" selected>This month</option>
+                                        <option value="this_year">This year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body px-4 pb-4 pt-0">
+                                <div class="position-relative">
+                                    <span class="dashboard-transaction-statistics-loading position-absolute top-0 end-0 mt-2"></span>
+                                    <div id="chart-transaction-statistics" style="height: 300px;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body px-4 pb-4 pt-0">
-                        <div class="position-relative">
-                            <span class="dashboard-transaction-statistics-loading position-absolute top-0 end-0 mt-2"></span>
-                            <div id="chart-transaction-statistics" style="height: 300px;"></div>
+                    
+                    <!-- Right Side: Donuts -->
+                    <div class="col-lg-4">
+                        <!-- Payment Methods -->
+                        <div class="card mb-4">
+                            <div class="card-header border-0 pt-3 px-4">
+                                <h3 class="card-title fw-bold m-0" style="font-size: 15px;">Payment Methods (30 Days)</h3>
+                            </div>
+                            <div class="card-body p-2">
+                                <div id="chart-payment-methods"></div>
+                            </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="card">
+                            <div class="card-header border-0 pt-3 px-4">
+                                <h3 class="card-title fw-bold m-0" style="font-size: 15px;">Transaction Status (30 Days)</h3>
+                            </div>
+                            <div class="card-body p-2">
+                                <div id="chart-transaction-status"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -475,6 +522,7 @@ body {
                                 stops: [0, 100]
                             }
                         },
+                        dataLabels: { enabled: false },
                         series: [
                           { name: "Total", data: res.total },
                           { name: "Complete", data: res.complete }
@@ -483,15 +531,16 @@ body {
                           categories: res.labels,
                           tooltip: { enabled: false },
                           axisBorder: { show: false },
-                          axisTicks: { show: false }
+                          axisTicks: { show: false },
+                          labels: { style: { colors: '#64748b' } }
                         },
                         yaxis: {
-                          labels: { style: { colors: '#94a3b8' } }
+                          labels: { style: { colors: '#64748b' } }
                         },
                         grid: { strokeDashArray: 4, borderColor: '#f1f5f9' },
                         tooltip: { theme: "light" },
-                        legend: { show: true, position: "top", horizontalAlign: 'right' },
-                        colors: ["#6366f1", "#10b981"]
+                        legend: { show: true, position: "top", horizontalAlign: 'right', labels: { colors: '#475569' } },
+                        colors: ["#6366f1", "#00e396"]
                       }
                     );
                     window.chartTransactionStatistics.render();
@@ -504,9 +553,54 @@ body {
         load_dashboard_transaction_statistics();
     }
 
+    function initAdvancedAnalytics() {
+        // Payment Methods Pie
+        let pmData = <?= json_encode($payment_methods) ?>;
+        let pmLabels = Object.keys(pmData);
+        let pmSeries = Object.values(pmData);
+        if(pmLabels.length === 0) { pmLabels = ['No Data']; pmSeries = [1]; }
+
+        new ApexCharts(document.getElementById("chart-payment-methods"), {
+            chart: { type: "donut", height: 220, fontFamily: "inherit", background: "transparent" },
+            series: pmSeries,
+            labels: pmLabels,
+            colors: ["#3b82f6", "#10b981", "#f59e0b", "#6366f1", "#ec4899", "#8b5cf6"],
+            stroke: { show: false },
+            legend: { position: "bottom", labels: { colors: "#475569" } },
+            plotOptions: { pie: { donut: { size: '65%', labels: { show: true, name: { color: "#64748b" }, value: { color: "#1e293b" } } } } },
+            dataLabels: { enabled: false },
+            tooltip: { theme: "light" }
+        }).render();
+
+        // Transaction Status Donut
+        let statusData = <?= json_encode($analytics_30_days) ?>;
+        let tsSeries = [statusData.completed, statusData.pending, statusData.failed];
+        let tsLabels = ["Completed", "Pending", "Failed"];
+        let tsColors = ["#10b981", "#f59e0b", "#ef4444"];
+        
+        if(tsSeries[0] === 0 && tsSeries[1] === 0 && tsSeries[2] === 0) {
+            tsSeries = [1];
+            tsLabels = ["No Data"];
+            tsColors = ["#e2e8f0"];
+        }
+
+        new ApexCharts(document.getElementById("chart-transaction-status"), {
+            chart: { type: "donut", height: 220, fontFamily: "inherit", background: "transparent" },
+            series: tsSeries,
+            labels: tsLabels,
+            colors: tsColors,
+            stroke: { show: false },
+            legend: { position: "bottom", labels: { colors: "#475569" } },
+            plotOptions: { pie: { donut: { size: '65%', labels: { show: true, name: { color: "#64748b" }, value: { color: "#1e293b" } } } } },
+            dataLabels: { enabled: false },
+            tooltip: { theme: "light" }
+        }).render();
+    }
+
     (function waitForApexCharts() {
         if (typeof ApexCharts !== 'undefined') {
             load_dashboard_transaction_statistics();
+            initAdvancedAnalytics();
         } else {
             setTimeout(waitForApexCharts, 200);
         }

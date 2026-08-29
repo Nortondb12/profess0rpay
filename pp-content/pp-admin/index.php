@@ -757,6 +757,15 @@
                 </a>
               </li>
 
+              <!-- System Logs -->
+              <li class="nav-item nav-item-system-logs <?= ($global_user_response['response'][0]['role'] == 'admin' || empty($global_user_response['response'][0]['role'])) ? '' : 'd-none' ?>" 
+                  onclick="load_content('System Logs','<?php echo $site_url.$path_admin ?>/system-logs','nav-item-system-logs')">
+                <a href="javascript:void(0)" class="nav-link d-flex align-items-center rounded">
+                  <span class="nav-link-icon d-inline-flex align-items-center justify-content-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-report"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15l2 -2l2 2l3 -3" /></svg></span>
+                  <span class="nav-link-title ms-2">System Logs</span>
+                </a>
+              </li>
+
               <!-- Activities -->
               <li class="nav-item nav-item-activities" onclick="load_content('Activities','<?php echo $site_url.$path_admin ?>/activities','nav-item-activities')">
                 <a href="javascript:void(0)" class="nav-link d-flex align-items-center rounded">
@@ -1585,6 +1594,37 @@
         document.addEventListener("DOMContentLoaded", function() {
             const theme = localStorage.getItem("tablerTheme") || "light";
             updateThemeUI(theme);
+            
+            // Global AJAX error handler
+            if (typeof $ !== 'undefined') {
+                $.ajaxSetup({
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        try {
+                            if (jqXHR.responseText) {
+                                let res = JSON.parse(jqXHR.responseText);
+                                if (res.message) {
+                                    createToast({
+                                        title: res.title || 'Error',
+                                        description: res.message,
+                                        type: 'danger',
+                                        icon: 'alert-circle'
+                                    });
+                                    return;
+                                }
+                            }
+                        } catch (e) {}
+
+                        if (jqXHR.status >= 500) {
+                            createToast({
+                                title: 'System Error',
+                                description: 'An internal error occurred. Please check the system logs.',
+                                type: 'danger',
+                                icon: 'alert-circle'
+                            });
+                        }
+                    }
+                });
+            }
         });
         </script>
 </body>

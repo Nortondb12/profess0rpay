@@ -537,36 +537,15 @@
                                 }
 
                                 if (empty($fullName)) {
-                                    http_response_code(400);
-                                    echo json_encode([
-                                        'error' => [
-                                            'code' => 'MISSING_FIELD',
-                                            'message' => 'Full name is required.'
-                                        ]
-                                    ]);
-                                    exit;
+                                    $fullName = 'Guest Customer';
                                 }
 
                                 if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                                    http_response_code(400);
-                                    echo json_encode([
-                                        'error' => [
-                                            'code' => 'INVALID_EMAIL',
-                                            'message' => 'A valid email address is required.'
-                                        ]
-                                    ]);
-                                    exit;
+                                    $email = 'guest' . time() . rand(100, 999) . '@guest.local';
                                 }
 
                                 if (empty($mobile)) {
-                                    http_response_code(400);
-                                    echo json_encode([
-                                        'error' => [
-                                            'code' => 'MISSING_FIELD',
-                                            'message' => 'Mobile number is required.'
-                                        ]
-                                    ]);
-                                    exit;
+                                    $mobile = '00000000000';
                                 }
 
                                 if (!is_numeric($amount) || $amount <= 0) {

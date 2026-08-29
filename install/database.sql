@@ -835,3 +835,15 @@ CREATE TABLE `pp_notifications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+
+CREATE TABLE `pp_system_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `error_level` varchar(50) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `line_number` int(11) DEFAULT NULL,
+  `url` text DEFAULT NULL,
+  `ip_address` varchar(100) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -49,9 +49,9 @@ Generate a hosted checkout link for your customer.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `full_name` | string | **Yes** | The full name of the customer. *(Alias: `customer_name`)* |
-| `email_address` | string | **Yes** | Customer's valid email address. *(Alias: `customer_email`)* |
-| `mobile_number` | string | **Yes** | Customer's mobile number. *(Alias: `customer_mobile`)* |
+| `full_name` | string | No | The full name of the customer. *(Alias: `customer_name`)* |
+| `email_address` | string | No | Customer's valid email address. *(Alias: `customer_email`)* |
+| `mobile_number` | string | No | Customer's mobile number. *(Alias: `customer_mobile`)* |
 | `amount` | number | **Yes** | The exact invoice amount (must be positive). |
 | `currency` | string | No | Currency code. Default is `BDT`. |
 | `return_url` | string | **Yes** | URL to redirect the customer after payment. *(Alias: `redirect_url`, `cancel_url`)* |
