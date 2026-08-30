@@ -134,9 +134,15 @@ class Profess0rPayUpdater {
 
             $destPath = $this->basePath . '/' . $subPath;
             if ($item->isDir()) {
-                if (!is_dir($destPath)) mkdir($destPath, 0755, true);
+                if (!is_dir($destPath)) {
+                    if (!mkdir($destPath, 0755, true) && !is_dir($destPath)) {
+                        throw new \Exception("Failed to create directory: " . $subPath . " (Check server permissions)");
+                    }
+                }
             } else {
-                copy($item, $destPath);
+                if (!copy($item, $destPath)) {
+                    throw new \Exception("Failed to copy file: " . $subPath . " (Check server permissions)");
+                }
             }
         }
         return true;
