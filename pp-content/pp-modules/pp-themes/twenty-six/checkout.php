@@ -876,7 +876,7 @@
 
         <!-- Logo & Name -->
         <div class="brand-row">
-            <img src="<?php echo $data['brand']['favicon'];?>" alt="" class="company-logo">
+            <img src="<?php echo !empty($data['brand']['favicon']) ? $data['brand']['favicon'] : $data['brand']['logo']; ?>" alt="" class="company-logo">
             <div class="brand-info">
                 <div class="company-name"><?php echo $data['brand']['name'];?></div>
                 <div class="view-details" data-bs-toggle="modal" data-bs-target="#modal-invoice-details">View Details</div>

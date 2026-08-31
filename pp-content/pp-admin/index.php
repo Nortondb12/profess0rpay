@@ -27,8 +27,12 @@
     <meta charset="utf-8">
     <meta name="author" content="Softnio">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Profess0rPay</title>
-    <link rel="shortcut icon" href="<?= $professorpay_favicon ?? '' ?>">
+    <?php
+        $current_active_favicon = (!empty($global_response_brand['response'][0]['favicon']) && $global_response_brand['response'][0]['favicon'] !== '--')
+            ? $global_response_brand['response'][0]['favicon']
+            : ($professorpay_favicon ?? '');
+    ?>
+    <link rel="shortcut icon" href="<?= htmlspecialchars($current_active_favicon) ?>">
     <?php
         $manifestData = [
             "name" => "Profess0rPay Admin",
@@ -429,9 +433,8 @@
         }
         @media (max-width: 767px) {
             .mobile-center-logo {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
+                margin-right: auto;
+                margin-left: 10px;
             }
             .notify-dropdown-mobile {
                 position: fixed !important;
@@ -496,15 +499,197 @@
               </a>
             </div>
             <!-- END NAVBAR LOGO -->
-            <div class="navbar-nav flex-row order-md-last">
-              <div class="nav-item dropdown d-flex me-1 me-md-3">
+            <div class="navbar-nav flex-row order-md-last align-items-center">
+              <!-- LIVE SYSTEM & DEVICE STATUS INDICATOR -->
+              <div class="nav-item d-flex me-1 me-md-3 align-items-center" id="system-status-indicator-container">
                 <style>
-                  .notification-bell-icon { width: 24px; height: 24px; }
-                  @media (min-width: 768px) { .notification-bell-icon { width: 29px; height: 29px; } }
+                  .status-pill-btn,
+                  .status-pill-btn:hover,
+                  .status-pill-btn:focus,
+                  .status-pill-btn:active {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 7px;
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    text-decoration: none !important;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    border: 1px solid transparent;
+                  }
+                  .status-pill-btn.status-operational {
+                    background: rgba(16, 185, 129, 0.1);
+                    color: #059669;
+                    border-color: rgba(16, 185, 129, 0.2);
+                  }
+                  .status-pill-btn.status-operational:hover {
+                    background: rgba(16, 185, 129, 0.18);
+                    color: #047857;
+                    transform: translateY(-1px);
+                    text-decoration: none !important;
+                  }
+                  .status-pill-btn.status-warning {
+                    background: rgba(245, 158, 11, 0.12);
+                    color: #d97706;
+                    border-color: rgba(245, 158, 11, 0.25);
+                  }
+                  .status-pill-btn.status-warning:hover {
+                    background: rgba(245, 158, 11, 0.2);
+                    color: #b45309;
+                    transform: translateY(-1px);
+                    text-decoration: none !important;
+                  }
+                  .status-dot-pulse {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    position: relative;
+                    display: inline-block;
+                    flex-shrink: 0;
+                  }
+                  .status-dot-pulse.dot-green {
+                    background: #10b981;
+                    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+                    animation: pulseGreen 2s infinite;
+                  }
+                  .status-dot-pulse.dot-orange {
+                    background: #f59e0b;
+                    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+                    animation: pulseOrange 1.8s infinite;
+                  }
+                  @keyframes pulseGreen {
+                    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+                    70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+                  }
+                  @keyframes pulseOrange {
+                    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+                    70% { box-shadow: 0 0 0 7px rgba(245, 158, 11, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                  }
+
+                  /* Mobile Responsiveness */
+                  @media (max-width: 767.98px) {
+                    #status-pill-text {
+                      display: none !important;
+                    }
+                    .status-pill-btn {
+                      padding: 0;
+                      width: 34px;
+                      height: 34px;
+                      border-radius: 10px;
+                      justify-content: center;
+                    }
+                    .notification-btn-wrapper {
+                      width: 36px;
+                      height: 36px;
+                      border-radius: 10px;
+                    }
+                    .notification-btn-wrapper .bell-icon {
+                      width: 22px !important;
+                      height: 22px !important;
+                    }
+                  }
                 </style>
-                <a href="#" class="nav-link px-0 position-relative" data-bs-toggle="dropdown" tabindex="-1" aria-label="Show notifications" style="margin-right: 4px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="icon notification-bell-icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" /><path d="M9 17v1a3 3 0 0 0 6 0v-1" /></svg>
-                  <span class="badge bg-red text-white d-none" id="notification-badge" style="position: absolute; top: 2px; right: 0px; border-radius: 50%; font-size: 10px; padding: 0; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-weight: bold;"></span>
+                <a href="javascript:void(0)" id="status-pill-badge" class="status-pill-btn status-operational" onclick="load_content('Devices','<?php echo $site_url.$path_admin ?>/devices','nav-item-devices')" title="System Healthy">
+                  <span class="status-dot-pulse dot-green" id="status-dot-pulse"></span>
+                  <span id="status-pill-text">System Live</span>
+                </a>
+              </div>
+
+              <div class="nav-item dropdown d-flex me-1 me-md-3 align-items-center">
+                <style>
+                  .notification-btn-wrapper {
+                    position: relative;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: var(--tblr-bg-surface-secondary, #f8fafc);
+                    border: 1px solid var(--tblr-border-color, rgba(0, 0, 0, 0.08));
+                    color: var(--tblr-body-color, #334155);
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    cursor: pointer;
+                    text-decoration: none;
+                  }
+                  .notification-btn-wrapper .bell-icon {
+                    width: 26px !important;
+                    height: 26px !important;
+                    transition: transform 0.3s ease;
+                  }
+                  #notification-badge {
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;
+                    min-width: 20px;
+                    height: 20px;
+                    padding: 0 6px;
+                    border-radius: 10px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    line-height: 1;
+                    background: #e63946;
+                    color: #ffffff;
+                    border: 2px solid var(--tblr-bg-surface, #ffffff);
+                    box-shadow: 0 2px 6px rgba(230, 57, 70, 0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  }
+                  
+                  /* Hover effect only for devices that support hover (not touchscreens) */
+                  @media (hover: hover) {
+                    .notification-btn-wrapper:hover {
+                      background: rgba(67, 97, 238, 0.1);
+                      color: #4361ee;
+                      border-color: rgba(67, 97, 238, 0.25);
+                      transform: translateY(-1px);
+                      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+                    }
+                    .notification-btn-wrapper:hover .bell-icon {
+                      transform: rotate(15deg);
+                    }
+                  }
+                  
+                  /* Active state when dropdown is open */
+                  .notification-btn-wrapper.show {
+                      background: rgba(67, 97, 238, 0.1);
+                      color: #4361ee;
+                      border-color: rgba(67, 97, 238, 0.25);
+                  }
+
+                  /* Mobile Responsiveness */
+                  @media (max-width: 767px) {
+                    .notification-btn-wrapper {
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 10px;
+                    }
+                    .notification-btn-wrapper .bell-icon {
+                        width: 22px !important;
+                        height: 22px !important;
+                    }
+                    #notification-badge {
+                        min-width: 18px;
+                        height: 18px;
+                        padding: 0 4px;
+                        font-size: 10px;
+                        top: -4px;
+                        right: -4px;
+                    }
+                  }
+                </style>
+                <a href="#" class="notification-btn-wrapper" data-bs-toggle="dropdown" tabindex="-1" aria-label="Show notifications">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon bell-icon" width="26" height="26" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
+                    <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
+                  </svg>
+                  <span class="badge bg-red text-white d-none" id="notification-badge"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card notify-dropdown-mobile" style="width: 350px; max-width: 100vw;">
                   <div class="card border-0">
@@ -524,8 +709,18 @@
                 </div>
               </div>
               <div class="nav-item dropdown">
+                <?php 
+                    $header_user_avatar = '';
+                    if (!empty($global_user_response['response'][0]['photo']) && $global_user_response['response'][0]['photo'] !== '--') {
+                        $header_user_avatar = $global_user_response['response'][0]['photo'];
+                    } elseif (!empty($global_response_brand['response'][0]['favicon']) && $global_response_brand['response'][0]['favicon'] !== '--') {
+                        $header_user_avatar = $global_response_brand['response'][0]['favicon'];
+                    } else {
+                        $header_user_avatar = 'https://ui-avatars.com/api/?name=' . urlencode(getNameChars($global_user_response['response'][0]['full_name'] ?? 'User', 2)) . '&color=FFFFFF&background=343a40';
+                    }
+                ?>
                 <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu" aria-expanded="false">
-                  <span class="avatar avatar-sm" style="background-image: url(https://ui-avatars.com/api/?name=<?php echo getNameChars($global_user_response['response'][0]['full_name'], 2);?>&color=FFFFFF&background=343a40"> </span>
+                  <span class="avatar avatar-sm rounded-2" style="background-image: url('<?php echo htmlspecialchars($header_user_avatar); ?>'); background-size: cover; background-position: center; border: 1px solid rgba(0,0,0,0.08);"> </span>
                   <div class="d-none d-xl-block ps-2">
                     <div style="width: 100px;white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"><?php echo $global_user_response['response'][0]['full_name']?></div>
                     <div class="mt-1 small text-secondary"><?php echo ucfirst($global_user_response['response'][0]['role'])?></div>
@@ -568,8 +763,16 @@
             <ul class="nav w-100 flex-column gap-2">
 
               <div class="nav-item dropdown mb-5 mt-2">
+                <?php 
+                    $sidebar_brand_avatar = '';
+                    if (!empty($global_response_brand['response'][0]['favicon']) && $global_response_brand['response'][0]['favicon'] !== '--') {
+                        $sidebar_brand_avatar = $global_response_brand['response'][0]['favicon'];
+                    } else {
+                        $sidebar_brand_avatar = 'https://ui-avatars.com/api/?name=' . urlencode(getNameChars($global_response_brand['response'][0]['identify_name'] ?? 'Brand', 1)) . '&color=FFFFFF&background=343a40';
+                    }
+                ?>
                 <a href="#" class="nav-link d-flex lh-1 p-2 rounded" data-bs-toggle="dropdown" aria-label="Open user menu" aria-expanded="false">
-                  <span class="avatar avatar-sm" style="min-width: 32px; background-image: url(https://ui-avatars.com/api/?name=<?php echo getNameChars($global_response_brand['response'][0]['identify_name'], 1);?>&color=FFFFFF&background=343a40"> </span>
+                  <span class="avatar avatar-sm rounded-2" style="min-width: 32px; background-image: url('<?php echo htmlspecialchars($sidebar_brand_avatar); ?>'); background-size: cover; background-position: center; border: 1px solid rgba(0,0,0,0.08);"> </span>
                   <div class="ps-2 w-100">
                     <div class="text-body" style="width: 100px;white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;"><?php echo $global_response_brand['response'][0]['identify_name'];?></div>
                     <div class="mt-1 small text-secondary">Active brand</div>
@@ -583,9 +786,16 @@
                       if($response_permission['status'] == true){
                           foreach($response_permission['response'] as $row){
                               $response_brand = json_decode(getData($db_prefix.'brands','WHERE brand_id = "'.$row['brand_id'].'"'),true);
+                              $other_brand_fav = (!empty($response_brand['response'][0]['favicon']) && $response_brand['response'][0]['favicon'] !== '--') 
+                                  ? $response_brand['response'][0]['favicon'] 
+                                  : '';
                   ?>
-                              <a href="javascript:void(0)" class="dropdown-item" onclick="set_brand('<?php echo $row['brand_id']?>')">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0" /><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" /><path d="M5 21l0 -10.15" /><path d="M19 21l0 -10.15" /><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" /></svg>
+                              <a href="javascript:void(0)" class="dropdown-item d-flex align-items-center gap-2" onclick="set_brand('<?php echo $row['brand_id']?>')">
+                                  <?php if(!empty($other_brand_fav)): ?>
+                                      <span class="avatar avatar-xs rounded" style="background-image: url('<?php echo htmlspecialchars($other_brand_fav); ?>'); background-size: cover; background-position: center; min-width: 20px; height: 20px; border: 1px solid rgba(0,0,0,0.08);"></span>
+                                  <?php else: ?>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0" /><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" /><path d="M5 21l0 -10.15" /><path d="M19 21l0 -10.15" /><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" /></svg>
+                                  <?php endif; ?>
                                   <?php echo $response_brand['response'][0]['identify_name']?>
                               </a>
                   <?php
@@ -1460,18 +1670,81 @@
                         return parseInt(b.id) - parseInt(a.id);
                     });
 
+                    function getNotificationIcon(title, type) {
+                        let t = (title || '').toLowerCase();
+                        
+                        // 1. System Update
+                        if (t.includes('update') || t.includes('system update') || t.includes('release')) {
+                            return `<div class="bg-purple-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-purple" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" /><path d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" /><path d="M15 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 2. Device Offline
+                        if (t.includes('device offline') || t.includes('offline') || t.includes('battery')) {
+                            return `<div class="bg-orange-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-orange" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 3h10a2 2 0 0 1 2 2v10m0 4a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-14" /><path d="M11 4h2" /><path d="M12 17v.01" /><path d="M3 3l18 18" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 3. New Device Added
+                        if (t.includes('new device') || t.includes('device added') || t.includes('device connected')) {
+                            return `<div class="bg-cyan-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-cyan" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14z" /><path d="M11 4h2" /><path d="M12 17v.01" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 4. Security Alert / Login / Auth
+                        if (t.includes('security') || t.includes('login') || t.includes('attempt') || t.includes('auth') || t.includes('password') || t.includes('ip address')) {
+                            return `<div class="bg-red-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /><path d="M12 11m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 12l0 2.5" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 5. Payment Successful
+                        if (t.includes('payment successful') || t.includes('successful') || t.includes('received') || t.includes('completed') || t.includes('paid')) {
+                            return `<div class="bg-green-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-green" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12" /><path d="M20 12v4h-4a2 2 0 0 1 0 -4h4" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 6. Payment Pending Review
+                        if (t.includes('pending') || t.includes('review') || t.includes('waiting')) {
+                            return `<div class="bg-yellow-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-yellow" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7v5l3 3" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 7. New Payment / Order Initiated
+                        if (t.includes('new payment') || t.includes('initiated') || t.includes('order')) {
+                            return `<div class="bg-blue-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                            </div>`;
+                        }
+                        
+                        // 8. Payment Cancelled / Failed / Webhook Error
+                        if (t.includes('cancel') || t.includes('failed') || t.includes('error') || t.includes('webhook')) {
+                            return `<div class="bg-red-lt avatar avatar-sm rounded-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                            </div>`;
+                        }
+                        
+                        // Type-based fallback
+                        if (type === 'success') {
+                            return `<div class="bg-green-lt avatar avatar-sm rounded-2 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-green" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg></div>`;
+                        } else if (type === 'warning') {
+                            return `<div class="bg-yellow-lt avatar avatar-sm rounded-2 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-yellow" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v2m0 4v.01" /><path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" /></svg></div>`;
+                        } else if (type === 'danger' || type === 'error') {
+                            return `<div class="bg-red-lt avatar avatar-sm rounded-2 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg></div>`;
+                        }
+                        
+                        // Default
+                        return `<div class="bg-indigo-lt avatar avatar-sm rounded-2 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-indigo" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" /><path d="M9 17v1a3 3 0 0 0 6 0v-1" /></svg></div>`;
+                    }
+
                     let html = '';
                     data.data.forEach(n => {
-                        let iconSvg = '';
-                        if (n.type === 'success') {
-                            iconSvg = `<div class="bg-green-lt avatar avatar-sm rounded"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-green" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg></div>`;
-                        } else if (n.type === 'warning') {
-                            iconSvg = `<div class="bg-yellow-lt avatar avatar-sm rounded"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-yellow" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v2m0 4v.01" /><path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" /></svg></div>`;
-                        } else if (n.type === 'danger') {
-                            iconSvg = `<div class="bg-red-lt avatar avatar-sm rounded"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg></div>`;
-                        } else {
-                            iconSvg = `<div class="bg-blue-lt avatar avatar-sm rounded"><svg xmlns="http://www.w3.org/2000/svg" class="icon text-blue" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 18h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v7.5" /><path d="M3 6l9 6l9 -6" /><path d="M15 18h6" /><path d="M18 15l3 3l-3 3" /></svg></div>`;
-                        }
+                        let iconSvg = getNotificationIcon(n.title, n.type);
                         
                         let actionUrl = '#';
                         if(n.title === 'Payment Pending Review') actionUrl = '<?php echo rtrim($site_url, "/") . "/" . $path_admin ?>/transaction?status=pending';
@@ -1506,6 +1779,33 @@
                 } else {
                     badge.classList.add('d-none');
                     list.innerHTML = '<div class="list-group-item text-center text-muted py-4">No new notifications</div>';
+                }
+
+                // Update Live System & Device Status Indicator
+                if (data.system_status) {
+                    let s = data.system_status;
+                    let pill = document.getElementById('status-pill-badge');
+                    let dot = document.getElementById('status-dot-pulse');
+                    let text = document.getElementById('status-pill-text');
+                    
+                    if (pill && dot && text) {
+                        if (s.devices_offline > 0) {
+                            pill.className = 'status-pill-btn status-warning';
+                            dot.className = 'status-dot-pulse dot-orange';
+                            text.innerText = s.devices_offline + (s.devices_offline === 1 ? ' Device Offline' : ' Devices Offline');
+                            pill.setAttribute('title', s.devices_offline + ' SMS device(s) offline. Click to view devices.');
+                        } else if (s.devices_total > 0) {
+                            pill.className = 'status-pill-btn status-operational';
+                            dot.className = 'status-dot-pulse dot-green';
+                            text.innerText = s.devices_online + ' Device' + (s.devices_online > 1 ? 's' : '') + ' Online';
+                            pill.setAttribute('title', 'All ' + s.devices_online + ' SMS device(s) connected and operating normally.');
+                        } else {
+                            pill.className = 'status-pill-btn status-operational';
+                            dot.className = 'status-dot-pulse dot-green';
+                            text.innerText = 'System Live';
+                            pill.setAttribute('title', 'System backend and database are healthy.');
+                        }
+                    }
                 }
             });
         }

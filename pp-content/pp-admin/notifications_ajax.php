@@ -17,7 +17,7 @@
 
     if ($action === 'get_unread') {
         // Device Offline Check
-        $devices = json_decode(getData($db_prefix.'device', ''), true);
+        $devices = json_decode(getData($db_prefix.'device', "WHERE status = 'used'"), true);
         if (isset($devices['status']) && $devices['status'] == true) {
             foreach ($devices['response'] as $device) {
                 $device_name = (string)($device['name'] ?? '');
@@ -80,6 +80,28 @@
             }
         }
 
+        $devices_total = 0;
+        $devices_online = 0;
+        $devices_offline = 0;
+        if (isset($devices['status']) && $devices['status'] == true && is_array($devices['response'])) {
+            $devices_total = count($devices['response']);
+            $now_t = time();
+            foreach ($devices['response'] as $d) {
+                $last_active_t = strtotime((string)($d['updated_date'] ?? ''));
+                if ($last_active_t !== false && ($now_t - $last_active_t) <= 3600) {
+                    $devices_online++;
+                } else {
+                    $devices_offline++;
+                }
+            }
+        }
+        $system_status = [
+            'devices_total' => $devices_total,
+            'devices_online' => $devices_online,
+            'devices_offline' => $devices_offline,
+            'overall' => ($devices_offline > 0) ? 'warning' : 'operational'
+        ];
+
         $notifications = json_decode(getData($db_prefix.'notifications', 'ORDER BY id DESC LIMIT 10'), true);
         
         $unread_count_data = json_decode(getData($db_prefix.'notifications', 'WHERE is_read = 0'), true);
@@ -94,9 +116,9 @@
                     $n['time_formatted'] = date('h:i A', strtotime($n['created_at']));
                 }
             }
-            echo json_encode(['status' => true, 'count' => $unread_count, 'data' => $notifications['response']]);
+            echo json_encode(['status' => true, 'count' => $unread_count, 'data' => $notifications['response'], 'system_status' => $system_status]);
         } else {
-            echo json_encode(['status' => true, 'count' => 0, 'data' => []]);
+            echo json_encode(['status' => true, 'count' => 0, 'data' => [], 'system_status' => $system_status]);
         }
     } 
     elseif ($action === 'mark_read') {

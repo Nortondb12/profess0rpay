@@ -452,7 +452,7 @@
                     <?php } ?>
                     <?php if (!empty($source_info_data)) { 
                         foreach ($source_info_data as $info) { 
-                            if ($info['label'] === 'Binance Order ID') continue; // Already shown as Transaction ID if matched
+                            if ($info['label'] === 'Binance Order ID' || strtolower($info['label']) === 'payment id') continue; // Already shown as Transaction ID if matched, or hidden per user request
                     ?>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span style="font-size: 13px; color: #6b7280; font-weight: 500;"><?= htmlspecialchars($info['label']) ?></span>

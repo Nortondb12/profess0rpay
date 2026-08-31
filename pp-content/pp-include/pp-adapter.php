@@ -430,6 +430,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
         if($action == ""){
             echo json_encode(['status' => "false", 'title' => 'Oops! Something went wrong', 'message' => 'Your request could not be processed. Please try again.']);
         }else{
+        $mobile_api_actions = ['connect-device', 'account-information', 'sms-transmit-bulk', 'update-device-status', 'get-brand-regex'];
+        if (!in_array($action, $mobile_api_actions)) {
             if($pp_app_token == ''){
                 if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -452,6 +454,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     exit;
                 }
             }
+        }
 
             //$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             $new_csrf_token = $_SESSION['csrf_token'];
@@ -5665,7 +5668,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                         try {
                             $mig_pdo = connectDatabase();
-                            $newCols = ['support_phone_number', 'support_email_address', 'support_website', 'whatsapp_number', 'telegram', 'facebook_messenger', 'facebook_page', 'email_receipt'];
+                            $newCols = ['support_phone_number', 'support_email_address', 'support_website', 'whatsapp_number', 'telegram', 'facebook_messenger', 'facebook_page', 'email_receipt', 'redirect_url'];
                             foreach($newCols as $col) {
                                 try { $mig_pdo->exec("ALTER TABLE `{$db_prefix}brands` ADD COLUMN `$col` text DEFAULT NULL"); } catch (\Throwable $e) {}
                             }
@@ -5676,9 +5679,12 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $values = [$email_receipt, $autoExchange, $branding_favicon, $branding_primary_logo, $site_name, $default_timezone, $default_language, $default_currency, money_sanitize($payment_tolerance), $redirect_url, $street_address, $city_town, $postal_code, $country, $support_phone_number, $support_email_address, $support_website, $whatsapp_number, $telegram, $facebook_messenger, $facebook_page, getCurrentDatetime('Y-m-d H:i:s')];
                         $condition = "brand_id = '".$global_response_brand['response'][0]['brand_id']."'"; 
                         
-                        updateData($db_prefix.'brands', $columns, $values, $condition);
-
-                        echo json_encode(['status' => 'true', 'title' => 'Brand Setting Updated', 'message' => 'The brand setting has been updated successfully.', 'csrf_token' => $new_csrf_token]);
+                        $updateStatus = updateData($db_prefix.'brands', $columns, $values, $condition);
+                        if ($updateStatus) {
+                            echo json_encode(['status' => 'true', 'title' => 'Brand Setting Updated', 'message' => 'The brand setting has been updated successfully.', 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            echo json_encode(['status' => 'false', 'title' => 'Database Error', 'message' => 'Failed to update brand setting. Please check the system logs.', 'csrf_token' => $new_csrf_token]);
+                        }
                     }
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
@@ -9492,8 +9498,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
         exit;
     }
 
-    $params = [ ':ref' => $transaction_id, ':status' => 'initiated' ];
-    $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND status = :status ', '* FROM', $params),true);
+    $params = [ ':ref' => $transaction_id ];
+    $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND (status = "initiated" OR status = "pending") ', '* FROM', $params),true);
     
     if($response_transaction['status'] == true){
         $params = [ ':brand_id' => $response_transaction['response'][0]['brand_id'] ];
@@ -9710,9 +9716,9 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     if($gateway_id == "" || $transaction_id == ""){
                         echo json_encode(['status' => "false", 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.']);
                     }else{
-                        $params = [ ':ref' => $transaction_id, ':status' => 'initiated' ];
+                        $params = [ ':ref' => $transaction_id ];
 
-                        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND status = :status ', '* FROM', $params),true);
+                        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND (status = "initiated" OR status = "pending") ', '* FROM', $params),true);
                         if($response_transaction['status'] == true){
                             $params = [ ':brand_id' => $response_transaction['response'][0]['brand_id'] ];
 
@@ -10181,7 +10187,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                 echo json_encode(['status' => "false", 'title' => 'Request Failed. Code 102', 'message' => 'Please fill in all required fields before proceeding.']);
                             }
                         }else{
-                            echo json_encode(['status' => "false", 'title' => 'Request Failed. Code 101', 'message' => 'Please fill in all required fields before proceeding.']);
+                            echo json_encode(['status' => "false", 'title' => 'Invoice Expired or Not Found (Code 101)', 'message' => 'This invoice is no longer active or valid. Please create a new payment link.']);
                         }
                     }
             }
@@ -10215,9 +10221,14 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         if($response['status'] == true){
                             if (!empty($model)) {
                                 $d_id = $response['response'][0]['d_id'];
-                                $existingNameCheck = json_decode(getData($db_prefix . 'device', "WHERE model = '{$model}' AND d_id = '{$d_id}' AND name != '' ORDER BY id DESC LIMIT 1"), true);
+                                $existingNameCheck = json_decode(getData($db_prefix . 'device', "WHERE model = '{$model}' AND d_id = '{$d_id}' AND status = 'used' ORDER BY id DESC LIMIT 1"), true);
                                 if ($existingNameCheck['status'] == true && !empty($existingNameCheck['response'])) {
-                                    $name = $existingNameCheck['response'][0]['name'];
+                                    if (!empty($existingNameCheck['response'][0]['name'])) {
+                                        $name = $existingNameCheck['response'][0]['name'];
+                                    }
+                                    
+                                    // Delete old ghost devices with the same model to prevent "extra device offline" issue
+                                    deleteData($db_prefix.'device', "model = '{$model}' AND d_id = '{$d_id}' AND status = 'used'");
                                 }
                             }
 
@@ -10255,6 +10266,9 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                         $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp AND status = :status', '* FROM', $params),true);
                         if($response['status'] == true){
+                            // Update device last sync (heartbeat)
+                            updateData($db_prefix.'device', ['updated_date'], [getCurrentDatetime('Y-m-d H:i:s')], "id = '" . $response['response'][0]['id'] . "'");
+
                             $params = [ ':cookie' => $response['response'][0]['d_id'] ];
 
                             $responseLog = json_decode(getData($db_prefix.'browser_log','WHERE cookie = :cookie', '* FROM', $params),true);
@@ -10342,6 +10356,19 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                 }
             }
 
+            if($action == "heartbeat"){
+                $token = escape_string($_POST['token'] ?? '');
+                if($token != ""){
+                    $params = [ ':otp' => $token, ':status' => 'used' ];
+                    $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp AND status = :status', '* FROM', $params),true);
+                    if($response['status'] == true){
+                        updateData($db_prefix.'device', ['updated_date', 'last_sync'], [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')], "id = '" . $response['response'][0]['id'] . "'");
+                        echo json_encode(['status' => "true"]);
+                    }
+                }
+                exit();
+            }
+
             if($action == "sms-transmit-bulk"){
                 if (!empty($pp_demo_mode)) {
                     echo json_encode(['status' => "false", 'title' => 'Demo Restriction', 'message' => 'This feature is disabled in the demo version.']);
@@ -10392,8 +10419,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                     insertData($db_prefix.'sms_data', $columns, $values);
 
-                                    $columns = ['last_sync'];
-                                    $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                    $columns = ['last_sync', 'updated_date'];
+                                    $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                     $condition = "id = '".$response['response'][0]['id']."'"; 
                                     
@@ -10417,8 +10444,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                         insertData($db_prefix.'sms_data', $columns, $values);
 
-                                        $columns = ['last_sync'];
-                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                        $columns = ['last_sync', 'updated_date'];
+                                        $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                         $condition = "id = '".$response['response'][0]['id']."'"; 
                                         
@@ -10441,8 +10468,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                             insertData($db_prefix.'sms_data', $columns, $values);
 
-                                            $columns = ['last_sync'];
-                                            $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                            $columns = ['last_sync', 'updated_date'];
+                                            $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                             $condition = "id = '".$response['response'][0]['id']."'"; 
                                             
@@ -10494,8 +10521,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                         insertData($db_prefix.'sms_data', $columns, $values);
 
-                                                        $columns = ['last_sync'];
-                                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                                        $columns = ['last_sync', 'updated_date'];
+                                                        $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                                         $condition = "id = '".$response['response'][0]['id']."'"; 
                                                         
@@ -10524,8 +10551,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                         insertData($db_prefix.'sms_data', $columns, $values);
 
-                                                        $columns = ['last_sync'];
-                                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                                        $columns = ['last_sync', 'updated_date'];
+                                                        $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                                         $condition = "id = '".$response['response'][0]['id']."'"; 
                                                         
@@ -10544,8 +10571,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                     insertData($db_prefix.'sms_data', $columns, $values);
 
-                                                    $columns = ['last_sync'];
-                                                    $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                                    $columns = ['last_sync', 'updated_date'];
+                                                    $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                                     $condition = "id = '".$response['response'][0]['id']."'"; 
                                                     
@@ -10562,8 +10589,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                 insertData($db_prefix.'sms_data', $columns, $values);
 
-                                                $columns = ['last_sync'];
-                                                $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                                $columns = ['last_sync', 'updated_date'];
+                                                $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                                 $condition = "id = '".$response['response'][0]['id']."'"; 
                                                 
@@ -10581,8 +10608,8 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                         insertData($db_prefix.'sms_data', $columns, $values);
 
-                                        $columns = ['last_sync'];
-                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
+                                        $columns = ['last_sync', 'updated_date'];
+                                        $values = [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                         $condition = "id = '".$response['response'][0]['id']."'"; 
                                         
