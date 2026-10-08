@@ -4617,25 +4617,29 @@
         return $value;
     }
 
-    function add_action(string $hook, callable $callback, int $priority = 10)
-    {
-        $GLOBALS['__actions'][$hook][$priority][] = $callback;
+    if (!function_exists('add_action')) {
+        function add_action(string $hook, callable $callback, int $priority = 10)
+        {
+            $GLOBALS['__actions'][$hook][$priority][] = $callback;
+        }
     }
 
-    function do_action(string $hook, ...$args)
-    {
-        if (empty($GLOBALS['__actions'][$hook])) {
-            return;
-        }
+    if (!function_exists('do_action')) {
+        function do_action(string $hook, ...$args)
+        {
+            if (empty($GLOBALS['__actions'][$hook])) {
+                return;
+            }
 
-        ksort($GLOBALS['__actions'][$hook]);
+            ksort($GLOBALS['__actions'][$hook]);
 
-        foreach ($GLOBALS['__actions'][$hook] as $callbacks) {
-            foreach ($callbacks as $callback) {
-                try {
-                    call_user_func($callback, ...$args);
-                } catch (Throwable $e) {
-                    error_log('Action error ['.$hook.']: '.$e->getMessage());
+            foreach ($GLOBALS['__actions'][$hook] as $callbacks) {
+                foreach ($callbacks as $callback) {
+                    try {
+                        call_user_func($callback, ...$args);
+                    } catch (Throwable $e) {
+                        error_log('Action error ['.$hook.']: '.$e->getMessage());
+                    }
                 }
             }
         }
