@@ -625,7 +625,10 @@
         elseif (strpos($r_slug, 'upay') !== false) $r_logo = pp_site_address() . 'assets/images/upay_logo.svg';
         elseif (strpos($r_slug, 'binance') !== false) $r_logo = pp_site_address() . 'assets/images/binance.svg'; // If it exists later
 
-        $timezone = $response_brand['response'][0]['timezone'] ?? 'Asia/Dhaka';
+        $timezone = $data['brand']['locale']['timezone'] ?? '';
+        if ($timezone === '' || $timezone === '--') {
+            $timezone = 'Asia/Dhaka';
+        }
         date_default_timezone_set($timezone);
 
         $receiptData = [
