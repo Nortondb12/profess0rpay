@@ -126,7 +126,10 @@
         if ($id === 'all') {
             updateData($db_prefix.'notifications', ['is_read'], [1], "is_read = 0");
         } else {
-            updateData($db_prefix.'notifications', ['is_read'], [1], "id = '$id'");
+            $id = (int) $id;
+            if ($id > 0) {
+                updateData($db_prefix.'notifications', ['is_read'], [1], "id = $id");
+            }
         }
         echo json_encode(['status' => true]);
     }

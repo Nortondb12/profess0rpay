@@ -1383,7 +1383,7 @@
         return !empty($permissions['pages'][$page]);
     }
 
-    function get_env($option_name, $brand_id = 'both') {
+    function get_env($option_name, $brand_id = 'both', $default = '') {
         global $db_prefix;
 
         $option_name = escape_string($option_name);
@@ -1396,7 +1396,7 @@
             $value = $response_env['response'][0]['value'];
 
             if($value == '--'){
-                $value = '';
+                $value = $default;
             }
         }else{
             $columns = ['brand_id', 'option_name', 'value', 'created_date', 'updated_date'];
@@ -1404,7 +1404,7 @@
 
             insertData($db_prefix.'env', $columns, $values);
 
-            $value = '';
+            $value = $default;
         }
 
         return $value;
@@ -4612,6 +4612,30 @@
         }
 
         return $value;
+    }
+
+    function add_action(string $hook, callable $callback, int $priority = 10)
+    {
+        $GLOBALS['__actions'][$hook][$priority][] = $callback;
+    }
+
+    function do_action(string $hook, ...$args)
+    {
+        if (empty($GLOBALS['__actions'][$hook])) {
+            return;
+        }
+
+        ksort($GLOBALS['__actions'][$hook]);
+
+        foreach ($GLOBALS['__actions'][$hook] as $callbacks) {
+            foreach ($callbacks as $callback) {
+                try {
+                    call_user_func($callback, ...$args);
+                } catch (Throwable $e) {
+                    error_log('Action error ['.$hook.']: '.$e->getMessage());
+                }
+            }
+        }
     }
 
     /*
